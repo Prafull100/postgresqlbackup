@@ -1,0 +1,18 @@
+pipeline {
+    agent {
+        label 'node2'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Prafull100/jenkinsPiplines.git']])
+            }
+        }
+        stage('Ansible Playbook Execution') {
+            steps {
+                sh "ansible-playbook $WORKSPACE/postgresqlbackup.yml"
+            }
+        }
+    }
+}
+
