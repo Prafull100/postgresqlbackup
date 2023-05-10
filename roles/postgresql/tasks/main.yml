@@ -1,0 +1,66 @@
+- name: Install PostgreSQL
+  apt:
+    name: postgresql
+    state: present
+
+- name: Edit postgresql.conf for remote access
+  lineinfile:
+    path: /etc/postgresql/14/main/postgresql.conf
+    regexp: '^#?listen_addresses =.*$'
+    line: "listen_addresses = '*'"
+  notify: restart postgresql
+
+- name: Create pg_hba.conf for remote access
+  blockinfile:
+    path: /etc/postgresql/14/main/pg_hba.conf
+    block: |
+      host    all             all             0.0.0.0/0               md5
+  notify: restart postgresql
+
+# - name: Create database backup
+# #   become_user: target1
+#   shell: pg_dump --format=custom --file=/tmp/xyz.backup --dbname=postgres --host=192.168.1.13
+#   become: true
+#   register: pg_dump_output
+
+# - name: Create database backup
+#   become_user: target1
+#   shell: pg_dump --format=custom --file=/tmp/xyz.backup --dbname=postgres --host=192.168.1.13
+#   become: true
+#   register: pg_dump_output
+
+- name: Set permissions on backup directory
+  file:
+    path: /tmp
+    state: directory
+    mode: "0755"
+
+- name: Create database backup
+  shell: pg_dump --format=custom --file=/tmp/xyz.backup --dbname=postgres --host=192.168.1.13
+  become: true
+  register: pg_dump_output
+
+
+- name: Display error message if backup creation failed
+  debug:
+    msg: "Failed to create backup: {{ pg_dump_output.stderr }}"
+  when: pg_dump_output.rc != 0
+
+
+# - name: Set permissions on backup directory
+#   become: true
+#   file:
+#     path: /tmp/
+#     state: directory
+#     mode: "0777"
+#   when: pg_dump_output.rc == 0
+
+- name: Copy backup file to target host
+  copy:
+    src: /tmp/abc.backup
+    dest: /tmp/
+  delegate_to: 192.168.1.14
+
+- name: Restore database on target host
+#   become_user: postgres
+  shell: pg_restore --verbose --clean --no-acl --no-owner --host=192.168.1.14 --dbname=postgres /tmp/xyz.backup
