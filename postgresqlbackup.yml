@@ -1,0 +1,6 @@
+---
+- name: Backup and restore PostgreSQL database
+  hosts: all
+  become: true
+  roles:
+    - postgresql
