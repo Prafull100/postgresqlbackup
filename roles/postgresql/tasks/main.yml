@@ -21,7 +21,7 @@
 
   - name: Update pg_hba.conf to use md5 authentication method
     lineinfile:
-      path: "/etc/postgresql/14/main/pg_hba.conf"
+      path: "/etc/postgresql/{{ansible_postgresql_version}}/main/pg_hba.conf"
       regexp: "^local\\s+all\\s+postgres\\s+peer"
       line: "local   all   postgres   md5"
     become: true
@@ -48,10 +48,10 @@
       var: file_md5
 
   - name: Copy backup file to remote location
-    shell: "/usr/bin/scp /tmp/pg_backup/sampledb_dump.sql.gz node2@192.168.1.29:/tmp/pg_backup"
+    shell: "/usr/bin/scp /tmp/pg_backup/sampledb_dump.sql.gz {{dest_ip}}:/tmp/pg_backup"
 
   - name: Generate MD5 hash of file
-    command: "md5sum  node2@192.168.1.29/tmp/pg_backup/{{ db_name }}_dump.sql.gz"
+    command: "md5sum  {{dest_ip}}/tmp/pg_backup/{{ db_name }}_dump.sql.gz"
     register: md5_output
 
 
