@@ -29,7 +29,7 @@
     - Reload PostgreSQL
 
 - name: Dump PostgreSQL database to file
-  shell: "PGPASSWORD=postgres pg_dump -U postgres -h localhost sampledb | tee > /tmp/pg_backup/sampledb_dump.sql"
+  shell: "PGPASSWORD=postgres pg_dump -U postgres -h localhost sampledb | tee > /tmp/pg_backup/{{ db_name }}_dump.sql"
   become: true
   register: dump_result
 
