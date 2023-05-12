@@ -11,13 +11,13 @@
     owner: target1
     group: target1
 
-- name: Install acl
-  apt:
-    state: latest
-    update_cache: true
-    pkg:
-      - acl
-    become: true
+# - name: Install acl
+#   apt:
+#     state: latest
+#     update_cache: true
+#     pkg:
+#       - acl
+#     become: true
 
 - name: Update pg_hba.conf to use md5 authentication method
   lineinfile:
