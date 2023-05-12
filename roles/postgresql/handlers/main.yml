@@ -1,5 +1,4 @@
-handlers:
-  - name: Reload PostgreSQL
-    service:
-      name: postgresql
-      state: reloaded
+- name: Reload PostgreSQL
+  service:
+    name: postgresql
+    state: reloaded
