@@ -1,7 +1,7 @@
 dbname: mydb
-dbuser: myuser
-dbpass: mypassword
-backup_file: "{{ dbname }}.backup"
-src_ip: 192.168.1.13
-dest_ip: 192.168.1.14
-ansible_postgresql.version: 14.7
+# dbuser: myuser
+# dbpass: mypassword
+# backup_file: "{{ dbname }}.backup"
+# src_ip: 172.20.10.6
+dest_ip: target2@172.20.10.7
+ansible_postgresql_version: 14.7
