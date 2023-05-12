@@ -3,55 +3,53 @@
     name: postgresql
     state: present
 
-  - name: Create backup directory
-    file:
-      path: "/tmp/pg_backup"
-      state: directory
-      mode: '0777'
-      owner: target1
-      group: target1
+- name: Create backup directory
+  file:
+    path: "/tmp/pg_backup"
+    state: directory
+    mode: '0777'
+    owner: target1
+    group: target1
 
-  - name: Install acl
-    apt:
-      state: latest
-      update_cache: true
-      pkg:
-        - acl
-      become: true
-
-  - name: Update pg_hba.conf to use md5 authentication method
-    lineinfile:
-      path: "/etc/postgresql/{{ansible_postgresql_version}}/main/pg_hba.conf"
-      regexp: "^local\\s+all\\s+postgres\\s+peer"
-      line: "local   all   postgres   md5"
+- name: Install acl
+  apt:
+    state: latest
+    update_cache: true
+    pkg:
+      - acl
     become: true
-    notify:
-      - Reload PostgreSQL
 
-  - name: Dump PostgreSQL database to file
-    shell: "PGPASSWORD=postgres pg_dump -U postgres -h localhost sampledb | tee > /tmp/pg_backup/sampledb_dump.sql"
-    become: true
-    register: dump_result
+- name: Update pg_hba.conf to use md5 authentication method
+  lineinfile:
+    path: "/etc/postgresql/{{ansible_postgresql_version}}/main/pg_hba.conf"
+    regexp: "^local\\s+all\\s+postgres\\s+peer"
+    line: "local   all   postgres   md5"
+  become: true
+  notify:
+    - Reload PostgreSQL
 
-  - name: Compress backup file
-    shell: "gzip -kf /tmp/pg_backup/{{ db_name }}_dump.sql"
+- name: Dump PostgreSQL database to file
+  shell: "PGPASSWORD=postgres pg_dump -U postgres -h localhost sampledb | tee > /tmp/pg_backup/sampledb_dump.sql"
+  become: true
+  register: dump_result
 
-  - name: Generate MD5 hash of file
-    command: "md5sum  /tmp/pg_backup/{{ db_name }}_dump.sql.gz"
-    register: md5_output
+- name: Compress backup file
+  shell: "gzip -kf /tmp/pg_backup/{{ db_name }}_dump.sql"
 
-  - set_fact:
-      file_md5: "{{ md5_output.stdout.split()[0] }}"
+- name: Generate MD5 hash of file
+  command: "md5sum  /tmp/pg_backup/{{ db_name }}_dump.sql.gz"
+  register: md5_output
 
-  - name: Print MD5 hash value
-    debug:
-      var: file_md5
+- set_fact:
+    file_md5: "{{ md5_output.stdout.split()[0] }}"
 
-  - name: Copy backup file to remote location
-    shell: "/usr/bin/scp /tmp/pg_backup/sampledb_dump.sql.gz {{dest_ip}}:/tmp/pg_backup"
+- name: Print MD5 hash value
+  debug:
+    var: file_md5
 
-  - name: Generate MD5 hash of file
-    command: "md5sum  {{dest_ip}}/tmp/pg_backup/{{ db_name }}_dump.sql.gz"
-    register: md5_output
+- name: Copy backup file to remote location
+  shell: "/usr/bin/scp /tmp/pg_backup/sampledb_dump.sql.gz {{dest_ip}}:/tmp/pg_backup"
 
-
+- name: Generate MD5 hash of file
+  command: "md5sum  {{dest_ip}}/tmp/pg_backup/{{ db_name }}_dump.sql.gz"
+  register: md5_output
