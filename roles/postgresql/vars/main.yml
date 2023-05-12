@@ -4,4 +4,4 @@ dbname: mydb
 # backup_file: "{{ dbname }}.backup"
 # src_ip: 172.20.10.6
 dest_ip: target2@172.20.10.7
-ansible_postgresql_version: 14.7
+ansible_postgresql_version: 14
