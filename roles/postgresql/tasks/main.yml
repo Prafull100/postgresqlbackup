@@ -48,8 +48,8 @@
     var: file_md5
     
 - name: Create backup directory
-  delegate_to: target2@198.168.1.17
-#   become: yes
+  delegate_to: 198.168.1.17
+  become: yes
   file:
     path: "/tmp/pg_backup"
     state: directory
