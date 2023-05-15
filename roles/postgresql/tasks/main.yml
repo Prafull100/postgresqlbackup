@@ -48,7 +48,7 @@
     var: file_md5
 
 - name: Copy backup file to remote location
-  shell: "/usr/bin/scp /tmp/pg_backup/{{ db_name }}_dump.sql.gz {{dest_ip}}:/tmp/pg_backup"
+  shell: "scp /tmp/pg_backup/{{ db_name }}_dump.sql.gz {{dest_ip}}:/tmp/pg_backup"
 
 - name: Generate MD5 hash of file
   command: "md5sum  {{dest_ip}}/tmp/pg_backup/{{ db_name }}_dump.sql.gz"
