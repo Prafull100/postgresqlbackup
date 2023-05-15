@@ -46,6 +46,15 @@
 - name: Print MD5 hash value
   debug:
     var: file_md5
+    
+- name: Create backup directory in Destination
+  file:
+    path: "/tmp/pg_backup"
+    state: directory
+    mode: '0777'
+    owner: target2
+    group: target2
+  delegate_to: target2@198.168.1.17  
 
 - name: Copy backup file to remote location
   shell: "/usr/bin/scp /tmp/pg_backup/{{ db_name }}_dump.sql.gz {{dest_ip}}:/tmp/pg_backup"
