@@ -2,14 +2,23 @@
   apt:
     name: postgresql
     state: present
+  when: inventory_hostname in groups['target_server1'][0]  
 
-- name: Create backup directory
+# - name: Create backup directory
+#   file:
+#     path: "/tmp/pg_backup"
+#     state: directory
+#     mode: '0777'
+#     owner: target1
+#     group: target1
+
+- name: Create backup directory on both the servers
   file:
     path: "/tmp/pg_backup"
     state: directory
     mode: '0777'
-    owner: target1
-    group: target1
+  when: inventory_hostname in groups['target_server1'] + groups['target_server2']
+
 
 # - name: Install acl
 #   apt:
@@ -27,40 +36,100 @@
   become: true
   notify:
     - Reload PostgreSQL
+  when: inventory_hostname in groups['target_server1'][0]  
 
 - name: Dump PostgreSQL database to file
   shell: "PGPASSWORD=password pg_dump -U postgres -h localhost {{ db_name }} | tee > /tmp/pg_backup/{{ db_name }}_dump.sql"
   become: true
   register: dump_result
+  when: inventory_hostname in groups['target_server1'][0]
 
 - name: Compress backup file
   shell: "gzip -kf /tmp/pg_backup/{{ db_name }}_dump.sql"
+  when: inventory_hostname in groups['target_server1'][0]
 
 - name: Generate MD5 hash of file
   command: "md5sum  /tmp/pg_backup/{{ db_name }}_dump.sql.gz"
   register: md5_output
+  when: inventory_hostname in groups['target_server1'][0]
 
 - set_fact:
     file_md5: "{{ md5_output.stdout.split()[0] }}"
+  when: inventory_hostname in groups['target_server1'][0]  
 
 - name: Print MD5 hash value
   debug:
     var: file_md5
+  when: inventory_hostname in groups['target_server1'][0]  
     
-- name: Create backup directory
-  delegate_to: target2@198.168.1.17
-  become: yes
-  file:
-    path: "/tmp/pg_backup"
-    state: directory
-    mode: '0777'
-    owner: target2
-    group: target2
+# - name: Create backup directory on both the servers
+#   file:
+#     path: "/tmp/pg_backup"
+#     state: directory
+#     mode: '0777'
+#   when: inventory_hostname in groups['target_server2']
+    
+    
+- name: Copy file from target1 to controller
+  fetch:
+    src: "/tmp/pg_backup/{{ db_name }}_dump.sql.gz"
+    dest: "/tmp/"
+    flat: yes
+  when: inventory_hostname in groups['target_server1'][0]
+
+- name: Copy file from controller to target2
+  copy:
+    src: "/tmp/{{ db_name }}_dump.sql.gz"
+    dest: "/tmp/pg_backup/{{ db_name }}_dump.sql.gz"
+  when: inventory_hostname in groups['target_server2'][0]
+
   
+- name: Generate MD5 hash of copied file on target2
+  command: "md5sum /tmp/pg_backup/{{ db_name }}_dump.sql.gz"
+  register: md5_target2
+  when: inventory_hostname in groups['target_server2'][0]
 
-- name: Copy backup file to remote location
-  shell: "/usr/bin/scp /tmp/pg_backup/{{ db_name }}_dump.sql.gz {{dest_ip}}:/tmp/pg_backup"
+- name: Print MD5 hash value of file on target2
+  debug:
+    var: md5_target2.stdout[0:32]
+  when: inventory_hostname in groups['target_server2'][0]
 
-- name: Generate MD5 hash of file
-  command: "md5sum  {{dest_ip}}/tmp/pg_backup/{{ db_name }}_dump.sql.gz"
-  register: md5_output
+- name: Compare md5sum values of two files
+  debug:
+    msg: "SUCCESS: target1 file and target2 files having same hash values"
+
+- name: Unzip the backup file
+  shell: "gunzip -f /tmp/pg_backup/{{ db_name }}_dump.sql.gz"
+  when: inventory_hostname in groups['target_server2'][0]
+
+- name: Install PostgreSQL on target2
+  apt:
+    name: postgresql
+    state: present
+  become: true
+  when: inventory_hostname in groups['target_server2'][0]
+
+- name: Update packages
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: inventory_hostname in groups['target_server2'][0]
+
+# - name: Delete database
+#   become_user: postgres
+#   postgresql_db:
+#     name: "{{ db_name }}"
+#     login_user: postgres
+#     login_password: postgres
+#     state: absent
+#   when: inventory_hostname in groups['target_servers2'][0]
+
+- name: Create new database on target2
+  become_user: postgres
+  postgresql_db:
+    name: "{{ db_name }}"
+    login_user: postgres
+    login_password: postgres
+    state: present
+  when: inventory_hostname in groups['target_server2'][0]
