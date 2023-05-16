@@ -127,6 +127,7 @@
 
 - name: Create new database on target2
 #   become_user: postgres
+  become: yes
   postgresql_db:
     name: "{{ db_name }}"
     login_user: postgres
