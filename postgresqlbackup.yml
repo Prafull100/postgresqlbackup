@@ -1,6 +1,6 @@
 ---
 - name: Backup and restore PostgreSQL database
-  hosts: slave1
+  hosts: target_server1:target_server2
   become: true
   roles:
     - postgresql
