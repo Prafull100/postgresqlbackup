@@ -123,13 +123,23 @@
 #     login_user: postgres
 #     login_password: postgres
 #     state: absent
-#   when: inventory_hostname in groups['target_servers2'][0]
+#   when: inventory_hostname in groups['target_server2'][0]
 
 - name: Create new database on target2
-  become_user: postgres
+#   become_user: postgres
   postgresql_db:
     name: "{{ db_name }}"
     login_user: postgres
     login_password: postgres
     state: present
   when: inventory_hostname in groups['target_server2'][0]
+
+  - name: Restore Postgres in target2
+    shell: PGPASSWORD=postgres psql -U postgres -d {{ db_name }} -f /tmp/pg_backup//{{ db_name }}_dump.sql
+    register: pg_restore_result
+    when: inventory_hostname in groups['target_server2'][0]
+
+  - name: PostgreSQL restore target2
+    debug:
+      var: pg_restore_result
+    when: inventory_hostname in groups['target_server2'][0]
